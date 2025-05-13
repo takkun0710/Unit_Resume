@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>ユナイト履歴書ジェネレーター</title>
+  <style>
+    :root {
+      --bg-speed:    #d0ebfd;
+      --bg-balance:  #e8d6f8;
+      --bg-attack:   #fadbd8;
+      --bg-defense:  #d5f5e3;
+      --bg-support:  #f9e79f;
+      --header-gradient: linear-gradient(90deg, #ff9a9e 0%, #fad0c4 100%);
+      --card-gradient:   linear-gradient(135deg, #ff6f61, #ff8a80);
+      --text-color: #333;
+    }
+    body { margin: 0; font-family: "Yu Gothic", sans-serif; background: #f0f0f0; color: var(--text-color); text-align: center; }
+    h1 { font-size: 32px; margin: 24px 0; background: var(--header-gradient); color: #fff; padding: 16px 0; text-shadow: 1px 1px 2px rgba(0,0,0,0.2); }
+    .controls { max-width: 600px; margin: auto; text-align: left; padding: 16px; background: #fff; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+    .controls label { display: block; font-weight: bold; margin: 12px 0 4px; }
+    .controls input, .controls select, .controls textarea { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; box-sizing: border-box; }
+    .controls input[type=file] { padding: 4px; }
+    p.section-label { margin-top: 24px; font-size: 18px; font-weight: bold; color: var(--text-color); text-align: left; max-width: 600px; margin: auto; }
+    .role-block { margin: 16px auto; padding: 12px; border-radius: 8px; max-width: 960px; }
+    .role-スピード   { background: var(--bg-speed); }
+    .role-バランス { background: var(--bg-balance); }
+    .role-アタック { background: var(--bg-attack); }
+    .role-ディフェンス { background: var(--bg-defense); }
+    .role-サポート { background: var(--bg-support); }
+    .role-block h2 { margin: 0 0 8px; font-size: 18px; color: var(--text-color); text-align: left; }
+    .pokemon-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+    .pokemon-item { width: 72px; cursor: pointer; border: 2px solid transparent; border-radius: 8px; transition: border-color .2s; text-align: center; background: #fff; padding: 6px; }
+    .pokemon-item.selected { border-color: #ff6f61; }
+    .pokemon-item img { width: 100%; display: block; }
+    .pokemon-item div { font-weight: bold; margin-top: 4px; }
+    button { background: var(--card-gradient); color: #fff; border: none; padding: 14px 28px; border-radius: 8px; font-size: 18px; font-weight: bold; cursor: pointer; box-shadow: 0 6px 12px rgba(0,0,0,0.2); margin: 24px 0; }
+    button:hover { opacity: 0.9; }
+    #resume-card { display: none; width: 680px; margin: 32px auto; background: #fff; border-radius: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.2); overflow: hidden; }
+    #resume-card .header { background: var(--header-gradient); padding: 16px; color: #fff; text-align: center; }
+    #resume-card .header h2 { margin: 0; font-size: 24px; font-weight: bold; }
+    #resume-card .info { display: flex; align-items: center; justify-content: flex-start; padding: 16px; gap: 16px; }
+    #resume-card .info .text-container { flex: 1; text-align: left; }
+    #resume-card .info .text-container div { margin-bottom: 4px; font-size: 16px; font-weight: bold; }
+    #resume-card .info .rank-container { display: flex; justify-content: center; align-items: center; width: 80px; }
+    #resume-card .info .rank-container img { width: 72px; height: 72px; }
+    #resume-card .info .avatar-container { display: flex; justify-content: center; align-items: center; width: 96px; }
+    #resume-card .info .avatar-container img { width: 96px; height: 96px; border-radius: 12px; object-fit: cover; border: 2px solid #ff6f61; }
+    #resume-card .roles { padding: 16px; }
+    .resume-role-block { margin-bottom: 12px; padding: 8px; border-radius: 6px; }
+    .resume-role-block h3 { margin: 0 0 6px; font-size: 16px; color: var(--text-color); }
+    .resume-role-grid { display: flex; flex-wrap: wrap; gap: 6px; }
+    .resume-role-grid img { width: 48px; height: 48px; object-fit: contain; border-radius: 4px; background: #f9f9f9; }
+    #resume-card .comment-section { padding: 16px; text-align: left; background: #f9f9f9; }
+    #resume-card .comment-section h3 { margin: 0 0 8px; font-size: 18px; font-weight: bold; color: #555; }
+    #resume-card .comment-section p { margin: 0; font-size: 14px; line-height: 1.4; }
+  </style>
+</head>
+<body>
+  <h1>ユナイト履歴書ジェネレーター</h1>
+
+  <div class="controls">
+    <label for="trainer-name">トレーナーネーム</label>
+    <input id="trainer-name" type="text" placeholder="なまえ">
+    <label for="trainer-id">トレーナーID</label>
+    <input id="trainer-id" type="text" placeholder="#AAAAAAA">
+    <label for="trainer-rank">ランク</label>
+    <select id="trainer-rank">
+      <option>ビギナー</option>
+      <option>スーパー</option>
+      <option>ハイパー</option>
+      <option>エリート</option>
+      <option>エキスパート</option>
+      <option>マスター</option>
+    </select>
+    <label for="trainer-icon">アイコン画像</label>
+    <input id="trainer-icon" type="file" accept="image/*">
+    <label for="play-comment">自己紹介・コメント</label>
+    <textarea id="play-comment" rows="3" placeholder="学習メイジ専門です！"></textarea>
+  </div>
+
+  <p class="section-label">得意なポケモンを選択</p>
+  <div id="role-container"></div>
+  <button id="generate-btn">履歴書を出力</button>
+
+  <div id="resume-card">
+    <div class="header"><h2>ユナイト履歴書</h2></div>
+    <div class="info">
+      <div class="text-container">
+        <div id="display-name"></div>
+        <div id="display-id"></div>
+        <div id="display-rank"></div>
+      </div>
+      <div class="rank-container"><img src="" alt="ランク"></div>
+      <div class="avatar-container"><img src="" alt="アイコン"></div>
+    </div>
+    <div class="roles" id="resume-roles"></div>
+    <div class="comment-section">
+      <h3>自己紹介</h3>
+      <p id="display-comment"></p>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script>
+    const rankIconUrls = {
+      'ビギナー': 'https://img.game8.co/3413658/001ecd4f3f61e5a6633f64731cf0df40.png/show',
+      'スーパー': 'https://img.game8.co/3413659/9aa71ce40aaf0290d070ddbf67ada1e7.png/show',
+      'ハイパー': 'https://img.game8.co/3413656/438ef381423e31dc3f3aac88f1972294.png/show',
+      'エリート': 'https://img.game8.co/3413660/5d6827ef98618ca3c751ec1f44cb0e45.png/show',
+      'エキスパート': 'https://img.game8.co/3413657/74967eb7863b2f1df0536f5d271555a7.png/show',
+      'マスター': 'https://img.game8.co/3413661/d2c5afc15f91c186933d635edb020f6d.png/show'
+    };
+    function getRankIcon(rank) { return rankIconUrls[rank] || ''; }
+
+const unitePokemon = [
+      { name: 'フシギバナ',       slug: 'venusaur',          role: 'アタック'   },
+      { name: 'リザードン',       slug: 'charizard',         role: 'バランス'   },
+      { name: 'カメックス',       slug: 'blastoise',         role: 'ディフェンス' },
+      { name: 'ピカチュウ',       slug: 'pikachu',           role: 'アタック'   },
+      { name: 'アローラライチュウ', slug: 'alolan-raichu',      role: 'アタック'   },
+      { name: 'ピクシー',         slug: 'clefable',          role: 'サポート'   },
+      { name: 'アローラキュウコン', slug: 'alolan-ninetales',   role: 'アタック'   },
+      { name: 'プクリン',         slug: 'wigglytuff',        role: 'サポート'   },
+      { name: 'コダック',         slug: 'psyduck',           role: 'サポート'   },
+      { name: 'カイリキー',       slug: 'machamp',           role: 'バランス'   },
+      { name: 'ガラルギャロップ', slug: 'galarian-rapidash',    role: 'スピード'   },
+      { name: 'ヤドラン',         slug: 'slowbro',           role: 'ディフェンス' },
+      { name: 'ドードリオ',       slug: 'dodrio',            role: 'スピード'   },
+      { name: 'ゲンガー',         slug: 'gengar',            role: 'スピード'   },
+      { name: 'ミライドン',       slug: 'miraidon',          role: 'アタック'   },
+      { name: 'バリヤード',       slug: 'mr-mime',           role: 'サポート'   },
+      { name: 'ギャラドス',       slug: 'gyarados',          role: 'バランス'   },
+      { name: 'ラプラス',         slug: 'lapras',            role: 'ディフェンス' },
+      { name: 'カビゴン',         slug: 'snorlax',           role: 'ディフェンス' },
+      { name: 'カイリュー',       slug: 'dragonite',         role: 'バランス' },
+      { name: 'メガミュウツーX',   slug: 'mewtwo-mega-x',     role: 'バランス'   },
+      { name: 'メガミュウツーY',   slug: 'mewtwo-mega-y',     role: 'アタック'   },
+      { name: 'ミュウ',           slug: 'mew',               role: 'アタック'   },
+      { name: 'マリルリ',         slug: 'azumarill',         role: 'バランス'   },
+      { name: 'エーフィ',         slug: 'espeon',            role: 'アタック'   },
+      { name: 'ブラッキー',       slug: 'umbreon',           role: 'ディフェンス'   },
+      { name: 'ハッサム',         slug: 'scizor',            role: 'バランス'   },
+      { name: 'ハピナス',         slug: 'blissey',           role: 'サポート'   },
+      { name: 'スイクン',         slug: 'suicune',           role: 'バランス' },
+      { name: 'バンギラス',       slug: 'tyranitar',         role: 'バランス' },
+      { name: 'ホウオウ',         slug: 'ho-oh',             role: 'ディフェンス' },
+      { name: 'バシャーモ',       slug: 'blaziken',          role: 'バランス'   },
+      { name: 'サーナイト',       slug: 'gardevoir',         role: 'アタック'   },
+      { name: 'ヤミラミ',         slug: 'sableye',           role: 'サポート'   },
+      { name: 'アブソル',         slug: 'absol',             role: 'スピード'   },
+      { name: 'メタグロス',       slug: 'metagross',         role: 'バランス'   },
+      { name: 'ガブリアス',       slug: 'garchomp',          role: 'バランス'   },
+      { name: 'ルカリオ',         slug: 'lucario',           role: 'バランス'   },
+      { name: 'リーフィア',       slug: 'leafeon',           role: 'スピード'   },
+      { name: 'グレイシア',       slug: 'glaceon',           role: 'アタック'   },
+      { name: 'マンムー',         slug: 'mamoswine',         role: 'ディフェンス' },
+      { name: 'ダークライ',       slug: 'darkrai',           role: 'スピード'   },
+      { name: 'イワパレス',       slug: 'crustle',         role: 'ディフェンス' },
+      { name: 'ゾロアーク',       slug: 'zoroark',           role: 'スピード'   },
+      { name: 'シャンデラ',       slug: 'chandelure',        role: 'アタック'   },
+      { name: 'マフォクシー',     slug: 'delphox',           role: 'アタック'   },
+      { name: 'ゲッコウガ',       slug: 'greninja',          role: 'アタック'   },
+      { name: 'ファイアロー',     slug: 'talonflame',        role: 'スピード'   },
+      { name: 'ギルガルド',       slug: 'aegislash',         role: 'バランス' },
+      { name: 'ニンフィア',       slug: 'sylveon',           role: 'アタック'   },
+      { name: 'ヌメルゴン',       slug: 'goodra',            role: 'ディフェンス' },
+      { name: 'オーロット',       slug: 'trevenant',         role: 'ディフェンス'   },
+      { name: 'フーパ',           slug: 'hoopa',             role: 'サポート'   },
+      { name: 'ジュナイパー',     slug: 'decidueye',         role: 'アタック'   },
+      { name: 'アマージョ',       slug: 'tsareena',           role: 'バランス' },
+      { name: 'キュワワー',       slug: 'comfey',             role: 'サポート'   }, 
+      { name: 'ミミッキュ',       slug: 'mimikyu',           role: 'バランス'   },
+      { name: 'マッシブーン',     slug: 'buzzwole',          role: 'バランス' },
+      { name: 'ゼラオラ',         slug: 'zeraora',           role: 'スピード'   },
+      { name: 'エースバーン',     slug: 'cinderace',         role: 'アタック'   },
+      { name: 'インテレオン',     slug: 'inteleon',          role: 'アタック'   },
+      { name: 'ヨクバリス',       slug: 'greedent',          role: 'ディフェンス' },
+      { name: 'ワタシラガ',       slug: 'eldegoss',          role: 'サポート'   },
+      { name: 'ウッウ',           slug: 'cramorant',         role: 'アタック'   },
+      { name: 'タイレーツ',       slug: 'falinks', role: 'バランス' },
+      { name: 'ジュラルドン',     slug: 'duraludon',         role: 'アタック'   },
+      { name: 'ドラパルト',       slug: 'dragapult',         role: 'アタック'   },
+      { name: 'ザシアン',         slug: 'zacian',            role: 'バランス'   },
+      { name: 'マスカーニャ',     slug: 'meowscarada',          role: 'スピード'   },
+      { name: 'グレンアルマ',     slug: 'armarouge',         role: 'アタック' },
+      { name: 'ソウブレイズ',     slug: 'ceruledge',         role: 'バランス' },
+      { name: 'デカヌチャン',     slug: 'tinkaton', role: 'バランス' },
+      { name: '一撃ウーラオス',    slug: 'urshifu', role: 'バランス' },
+      { name: '連撃ウーラオス',    slug: 'urshifu-rapid-strike', role: 'バランス' },
+      { name: 'ストライク',       slug: 'Scyther',         role: 'スピード'   }
+    ];
+
+    // 特殊URLマップ（4匹分）
+    const specialImage = {
+      'mewtwo-mega-y': 'https://unite.pokemon.com/images/pokemon/mewtwo/stat/evolution-1-mewtwo-y.png',
+      'mewtwo-mega-x': 'https://unite.pokemon.com/images/pokemon/mewtwo/stat/evolution-3-mewtwo-x.png',
+      'Scyther':        'https://unite.pokemon.com/images/pokemon/scizor/stat/evolution-1-scyther.png',
+      'urshifu-rapid-strike':  'https://cdn.wikiwiki.jp/to/w/poke-unite/%E3%82%A6%E3%83%BC%E3%83%A9%E3%82%AA%E3%82%B9/::ref/%E3%82%A6%E3%83%BC%E3%83%A9%E3%82%AA%E3%82%B9%E5%85%A8%E8%BA%AB_%E3%82%8C%E3%82%93%E3%81%92%E3%81%8D.png.webp?rev=5d679f0c9a05a5cdee2501c0b198fd61&t=20250217094016'
+    };
+    function getIconUrl(slug) {
+      return specialImage[slug] || `https://unite.pokemon.com/images/pokemon/${slug}/stat/stat-${slug}.png`;
+    }
+    const roleOrder = ['スピード','バランス','アタック','ディフェンス','サポート'];
+    let avatarUrl = '';
+
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('trainer-icon').addEventListener('change', e => {
+        const file = e.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = ev => { avatarUrl = ev.target.result; };
+          reader.readAsDataURL(file);
+        }
+      });
+      const container = document.getElementById('role-container');
+      const selected = new Set();
+      roleOrder.forEach(role => {
+        const block = document.createElement('div');
+        block.className = `role-block role-${role}`;
+        block.innerHTML = `<h2>${role}</h2><div class="pokemon-grid"></div>`;
+        container.appendChild(block);
+        const grid = block.querySelector('.pokemon-grid');
+        unitePokemon.filter(p => p.role === role).forEach(p => {
+          const item = document.createElement('div');
+          item.className = 'pokemon-item'; item.title = p.name;
+          item.innerHTML = `<img src="${getIconUrl(p.slug)}" alt="${p.name}"><div>${p.name}</div>`;
+          item.onclick = () => {
+            if (selected.has(p)) { selected.delete(p); item.classList.remove('selected'); }
+            else { selected.add(p); item.classList.add('selected'); }
+          };
+          grid.appendChild(item);
+        });
+      });
+      document.getElementById('generate-btn').onclick = () => {
+        const nameVal = document.getElementById('trainer-name').value;
+        const idVal = document.getElementById('trainer-id').value;
+        document.getElementById('display-name').textContent = `トレーナーネーム：${nameVal}`;
+        document.getElementById('display-id').textContent = `トレーナーID：${idVal}`;
+        const rankVal = document.getElementById('trainer-rank').value;
+        document.getElementById('display-rank').textContent = `ランク： ${rankVal}`;
+        document.querySelector('#resume-card .rank-container img').src = getRankIcon(rankVal);
+        if (avatarUrl) document.querySelector('#resume-card .avatar-container img').src = avatarUrl;
+        document.getElementById('display-comment').textContent = document.getElementById('play-comment').value;
+        const rolesContainer = document.getElementById('resume-roles'); rolesContainer.innerHTML = '';
+        roleOrder.forEach(role => {
+          const pokes = [...selected].filter(p => p.role === role);
+          if (pokes.length) {
+            const b = document.createElement('div'); b.className = `resume-role-block role-${role}`;
+            b.innerHTML = `<h3>${role}</h3><div class='resume-role-grid'></div>`;
+            pokes.forEach(p => {
+              const img = document.createElement('img'); img.src = getIconUrl(p.slug); img.alt = p.name;
+              b.querySelector('.resume-role-grid').appendChild(img);
+            });
+            rolesContainer.appendChild(b);
+          }
+        });
+        document.getElementById('resume-card').style.display = 'block';
+      };
+    });
+  </script>
+</body>
+</html>
